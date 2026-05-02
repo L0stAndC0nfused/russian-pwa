@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0a0a0b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<title>Russian for Jenny</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg:       #0a0a0b;
+  --s1:       #111113;
+  --s2:       #18181b;
+  --s3:       #222226;
+  --border:   #2a2a30;
+  --gold:     #d4a843;
+  --gold2:    #f0c866;
+  --red:      #e05555;
+  --green:    #4ade80;
+  --blue:     #60a5fa;
+  --purple:   #a78bfa;
+  --text:     #f4f4f5;
+  --t2:       #a1a1aa;
+  --t3:       #52525b;
+  --sat:      env(safe-area-inset-top, 0px);
+  --sab:      env(safe-area-inset-bottom, 0px);
+  --sal:      env(safe-area-inset-left, 0px);
+  --sar:      env(safe-area-inset-right, 0px);
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
+  font-size: 16px;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--sat);
+  padding-bottom: var(--sab);
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════
+   VIEWS
+═══════════════════════════════════════════════════════ */
+.view { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.view.active { display: flex; }
+
+/* ═══════════════════════════════════════════════════════
+   CALENDAR VIEW
+═══════════════════════════════════════════════════════ */
+#view-cal { background: var(--bg); }
+
+.cal-header {
+  padding: 14px 20px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.cal-month-label {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.cal-month-label span { color: var(--gold); }
+.cal-nav { display: flex; gap: 4px; }
+.cal-nav-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--s2);
+  color: var(--t2);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+}
+.cal-nav-btn:active { transform: scale(0.9); background: var(--s3); }
+
+.weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+.wd {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--t3);
+  padding: 6px 0;
+  text-transform: uppercase;
+}
+
+.cal-grid-wrap {
+  flex: 1;
+  padding: 0 8px 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  flex: 1;
+  gap: 3px;
+}
+
+.day-cell {
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), background 0.15s;
+  overflow: hidden;
+  user-select: none;
+}
+.day-cell:active { transform: scale(0.88); }
+.day-cell.out-range { opacity: 0.18; pointer-events: none; }
+.day-cell.in-range { background: var(--s1); }
+
+/* Phase tints */
+.day-cell.ph0 { background: #e0554514; }
+.day-cell.ph1 { background: #d4a84314; }
+.day-cell.ph2 { background: #60a5fa14; }
+.day-cell.ph3 { background: #4ade8014; }
+
+.day-cell.today .day-num {
+  background: var(--gold);
+  color: #000;
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+}
+.day-cell.selected { outline: 2px solid var(--gold); outline-offset: -2px; }
+.day-cell.done::after {
+  content: '';
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.day-num {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+}
+.day-dots {
+  display: flex;
+  gap: 2px;
+  margin-top: 3px;
+  min-height: 5px;
+}
+.day-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+}
+.day-cell.exam-day .day-num { color: var(--red); }
+
+/* ═══════════════════════════════════════════════════════
+   TODAY VIEW
+═══════════════════════════════════════════════════════ */
+#view-today {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.today-hero {
+  padding: 24px 20px 16px;
+  background: linear-gradient(135deg, var(--s1) 0%, var(--bg) 100%);
+}
+.today-date-label {
+  font-size: 13px;
+  color: var(--t2);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.today-date-big {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+.today-phase-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.today-note {
+  margin: 16px 20px;
+  padding: 14px 16px;
+  background: var(--s2);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.6;
+  border-left: 3px solid var(--gold);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROGRESS VIEW
+═══════════════════════════════════════════════════════ */
+#view-progress {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.prog-header {
+  padding: 20px 20px 8px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.prog-ring-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 16px;
+}
+.prog-ring-svg { overflow: visible; }
+.prog-ring-bg { fill: none; stroke: var(--s2); stroke-width: 12; }
+.prog-ring-fill {
+  fill: none;
+  stroke: url(#ringGrad);
+  stroke-width: 12;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 80px 80px;
+  transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1);
+}
+.prog-ring-text-big {
+  font-size: 28px;
+  font-weight: 700;
+  fill: var(--text);
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.prog-ring-text-small {
+  font-size: 11px;
+  fill: var(--t2);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-family: 'Inter', sans-serif;
+}
+.prog-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+.prog-stat {
+  background: var(--s1);
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+.prog-stat-val {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.prog-stat-label { font-size: 12px; color: var(--t2); margin-top: 2px; }
+.phase-progress-list { padding: 0 16px 24px; }
+.phase-prog-item {
+  margin-bottom: 14px;
+}
+.phase-prog-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.phase-prog-name { font-size: 13px; font-weight: 500; }
+.phase-prog-pct { font-size: 12px; color: var(--t2); font-weight: 600; }
+.phase-track {
+  height: 6px;
+  background: var(--s2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.phase-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ═══════════════════════════════════════════════════════
+   BOTTOM NAV
+═══════════════════════════════════════════════════════ */
+.bottom-nav {
+  display: flex;
+  background: var(--s1);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  gap: 3px;
+  transition: opacity 0.15s;
+  position: relative;
+}
+.nav-btn:active { opacity: 0.6; }
+.nav-icon {
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.nav-btn.active .nav-icon { transform: scale(1.15); }
+.nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--t3);
+  transition: color 0.15s;
+}
+.nav-btn.active .nav-label { color: var(--gold); }
+.nav-indicator {
+  position: absolute;
+  top: 0;
+  width: 32px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.nav-btn.active .nav-indicator { transform: scaleX(1); }
+
+/* ═══════════════════════════════════════════════════════
+   BOTTOM SHEET
+═══════════════════════════════════════════════════════ */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0);
+  z-index: 50;
+  pointer-events: none;
+  transition: background 0.3s;
+}
+.backdrop.open { background: rgba(0,0,0,0.65); pointer-events: all; }
+
+.sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  z-index: 51;
+  background: var(--s1);
+  border-radius: 20px 20px 0 0;
+  transform: translateY(100%);
+  transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--sab);
+  will-change: transform;
+}
+.sheet.open { transform: translateY(0); }
+
+.sheet-handle-wrap {
+  padding: 10px 0 4px;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: grab;
+}
+.sheet-handle {
+  width: 40px; height: 4px;
+  background: var(--s3);
+  border-radius: 2px;
+}
+.sheet-head {
+  padding: 8px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sheet-head-left {}
+.sheet-date-num {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1;
+}
+.sheet-date-sub {
+  font-size: 13px;
+  color: var(--t2);
+  margin-top: 2px;
+}
+.sheet-phase-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.sheet-close {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--s3);
+  color: var(--t2);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.1s;
+}
+.sheet-close:active { transform: scale(0.88); }
+
+.sheet-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  overscroll-behavior: contain;
+}
+.sheet-body { padding: 16px 20px 24px; }
+
+/* Section labels */
+.sec-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin: 20px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sec-label:first-child { margin-top: 0; }
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Note */
+.day-note {
+  background: var(--s2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.6;
+  border-left: 3px solid var(--gold);
+}
+
+/* Vocab */
+.vocab-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.vocab-card {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: transform 0.1s;
+}
+.vocab-card:active { transform: scale(0.96); }
+.vocab-ru { font-size: 16px; font-weight: 600; color: var(--gold); margin-bottom: 2px; }
+.vocab-en { font-size: 11px; color: var(--t2); }
+
+/* Tasks */
+.task-card {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), border-color 0.2s;
+  cursor: pointer;
+  animation: slideUp 0.25s cubic-bezier(0.4,0,0.2,1) both;
+}
+.task-card.done { border-color: var(--green); opacity: 0.55; }
+.task-card:active { transform: scale(0.97); }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.task-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.task-check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  background: transparent;
+}
+.task-card.done .task-check { background: var(--green); border-color: var(--green); color: #000; }
+.task-info { flex: 1; }
+.task-name { font-size: 14px; font-weight: 600; line-height: 1.3; margin-bottom: 4px; }
+.task-desc { font-size: 12px; color: var(--t2); line-height: 1.55; }
+.task-card.done .task-name { text-decoration: line-through; }
+.task-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.task-dur {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.timer-launch {
+  background: var(--s3);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--t2);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+  font-family: 'Inter', sans-serif;
+}
+.timer-launch:active { transform: scale(0.93); background: var(--gold); color: #000; }
+
+/* Events */
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  animation: slideUp 0.2s both;
+}
+.event-item:last-child { border-bottom: none; }
+.event-bullet {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--purple);
+  flex-shrink: 0;
+}
+.event-text { flex: 1; font-size: 13px; }
+.event-del {
+  background: none;
+  border: none;
+  color: var(--t3);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.12s;
+}
+.event-del:active { color: var(--red); background: #e0554520; }
+.add-event-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.add-event-input {
+  flex: 1;
+  background: var(--s2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.add-event-input:focus { border-color: var(--purple); }
+.add-event-input::placeholder { color: var(--t3); }
+.add-event-btn {
+  width: 44px; height: 44px;
+  background: var(--purple);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), opacity 0.15s;
+  flex-shrink: 0;
+}
+.add-event-btn:active { transform: scale(0.88); opacity: 0.8; }
+
+/* Mark complete */
+.mark-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: none;
+  color: var(--t2);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 20px;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.mark-btn:active { transform: scale(0.97); }
+.mark-btn.done { border-color: var(--green); color: var(--green); background: #4ade8012; }
+
+/* ═══════════════════════════════════════════════════════
+   TIMER OVERLAY
+═══════════════════════════════════════════════════════ */
+.timer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  padding-top: calc(40px + var(--sat));
+  padding-bottom: calc(40px + var(--sab));
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.32,0.72,0,1);
+}
+.timer-overlay.open { transform: translateY(0); }
+
+.timer-task-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--t2);
+  text-align: center;
+  margin-bottom: 40px;
+  max-width: 280px;
+}
+.timer-ring-wrap {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin-bottom: 48px;
+}
+.timer-ring-svg { width: 220px; height: 220px; overflow: visible; }
+.t-ring-bg { fill: none; stroke: var(--s2); stroke-width: 10; }
+.t-ring-fill {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 110px 110px;
+  transition: stroke-dashoffset 0.5s linear, stroke 0.4s;
+}
+.t-ring-fill.warning { stroke: var(--red); }
+.timer-text-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.timer-digits {
+  font-size: 52px;
+  font-weight: 300;
+  letter-spacing: -2px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.timer-status {
+  font-size: 12px;
+  color: var(--t2);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.timer-controls {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+.timer-btn {
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), background 0.15s;
+}
+.timer-btn:active { transform: scale(0.88); }
+.timer-btn-sm {
+  width: 52px; height: 52px;
+  background: var(--s2);
+  color: var(--t2);
+}
+.timer-btn-main {
+  width: 72px; height: 72px;
+  background: var(--gold);
+  color: #000;
+  font-size: 28px;
+}
+.timer-btn-close {
+  position: absolute;
+  top: calc(16px + var(--sat));
+  left: 16px;
+  width: 40px; height: 40px;
+  background: var(--s2);
+  color: var(--t2);
+  border: none;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.1s;
+}
+.timer-btn-close:active { transform: scale(0.88); }
+
+/* Timer done anim */
+@keyframes timerDone {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(1.08); }
+  50%  { transform: scale(0.95); }
+  75%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+.timer-ring-wrap.done-anim { animation: timerDone 0.6s ease; }
+
+/* ═══════════════════════════════════════════════════════
+   INSTALL BANNER
+═══════════════════════════════════════════════════════ */
+.install-banner {
+  position: fixed;
+  bottom: calc(var(--sab) + 72px);
+  left: 12px; right: 12px;
+  z-index: 60;
+  background: var(--s2);
+  border: 1px solid var(--gold);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  animation: slideUp 0.4s 1.5s both;
+}
+.install-banner-text { flex: 1; }
+.install-banner-title { font-size: 13px; font-weight: 700; color: var(--gold); margin-bottom: 2px; }
+.install-banner-sub { font-size: 11px; color: var(--t2); }
+.install-banner-btn {
+  background: var(--gold);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: transform 0.1s;
+  white-space: nowrap;
+}
+.install-banner-btn:active { transform: scale(0.93); }
+.install-banner-close {
+  background: none;
+  border: none;
+  color: var(--t3);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+/* Exam day banner */
+.exam-banner {
+  margin: 0 20px 16px;
+  padding: 12px 16px;
+  background: #e0554514;
+  border: 1px solid var(--red);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--red);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Today task section in Today view */
+.today-task-card {
+  margin: 0 16px 10px;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  transition: transform 0.1s;
+  cursor: pointer;
+  animation: slideUp 0.25s cubic-bezier(0.4,0,0.2,1) both;
+}
+.today-task-card:active { transform: scale(0.97); }
+.today-task-card.done { opacity: 0.45; }
+.today-task-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.today-check {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.today-task-card.done .today-check { background: var(--green); border-color: var(--green); color: #000; }
+.today-task-name { font-size: 14px; font-weight: 600; }
+.today-task-card.done .today-task-name { text-decoration: line-through; }
+.today-task-desc { font-size: 12px; color: var(--t2); line-height: 1.5; padding-left: 30px; }
+
+.today-sec-label {
+  padding: 16px 20px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--t3);
+}
+
+.today-prog-row {
+  margin: 0 16px 20px;
+  padding: 14px 16px;
+  background: var(--s2);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.today-prog-ring { flex-shrink: 0; }
+.today-prog-info { flex: 1; }
+.today-prog-pct { font-size: 20px; font-weight: 700; }
+.today-prog-sub { font-size: 12px; color: var(--t2); }
+.today-prog-track {
+  height: 4px;
+  background: var(--s3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.today-prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold2));
+  border-radius: 2px;
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+</style>
+</head>
+<body>
+
+<!-- ── CALENDAR VIEW ── -->
+<div class="view active" id="view-cal">
+  <div class="cal-header">
+    <div class="cal-month-label" id="cal-label">May <span>2026</span></div>
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="Previous">‹</button>
+      <button class="cal-nav-btn" onclick="changeMonth(1)"  aria-label="Next">›</button>
+    </div>
+  </div>
+  <div class="weekday-row">
+    <div class="wd">M</div><div class="wd">T</div><div class="wd">W</div>
+    <div class="wd">T</div><div class="wd">F</div><div class="wd">S</div><div class="wd">S</div>
+  </div>
+  <div class="cal-grid-wrap">
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+</div>
+
+<!-- ── TODAY VIEW ── -->
+<div class="view" id="view-today">
+  <div class="today-hero">
+    <div class="today-date-label" id="td-label"></div>
+    <div class="today-date-big" id="td-date"></div>
+    <div class="today-phase-pill" id="td-phase"></div>
+  </div>
+  <div id="td-body"></div>
+</div>
+
+<!-- ── PROGRESS VIEW ── -->
+<div class="view" id="view-progress">
+  <div class="prog-header">Progress</div>
+  <div class="prog-ring-wrap">
+    <svg class="prog-ring-svg" width="160" height="160" viewBox="0 0 160 160">
+      <defs>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#d4a843"/>
+          <stop offset="100%" stop-color="#f0c866"/>
+        </linearGradient>
+      </defs>
+      <circle class="prog-ring-bg" cx="80" cy="80" r="68"/>
+      <circle class="prog-ring-fill" id="prog-fill-ring" cx="80" cy="80" r="68"
+        stroke-dasharray="427.26" stroke-dashoffset="427.26"/>
+      <text class="prog-ring-text-big" x="80" y="73" id="prog-pct-text">0%</text>
+      <text class="prog-ring-text-small" x="80" y="93" id="prog-days-text">0 / 0 days</text>
+    </svg>
+  </div>
+  <div class="prog-stats" id="prog-stats"></div>
+  <div class="today-sec-label">By Phase</div>
+  <div class="phase-progress-list" id="phase-list"></div>
+</div>
+
+<!-- ── BOTTOM NAV ── -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-cal" onclick="switchView('cal')">
+    <div class="nav-indicator"></div>
+    <div class="nav-icon">📅</div>
+    <div class="nav-label">CALENDAR</div>
+  </button>
+  <button class="nav-btn" id="nav-today" onclick="switchView('today')">
+    <div class="nav-indicator"></div>
+    <div class="nav-icon">⭐</div>
+    <div class="nav-label">TODAY</div>
+  </button>
+  <button class="nav-btn" id="nav-progress" onclick="switchView('progress')">
+    <div class="nav-indicator"></div>
+    <div class="nav-icon">📈</div>
+    <div class="nav-label">PROGRESS</div>
+  </button>
+</nav>
+
+<!-- ── DAY SHEET ── -->
+<div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle-wrap" id="sheet-handle-wrap">
+    <div class="sheet-handle"></div>
+  </div>
+  <div class="sheet-head">
+    <div class="sheet-head-left">
+      <div class="sheet-date-num" id="sh-num"></div>
+      <div class="sheet-date-sub" id="sh-sub"></div>
+      <div class="sheet-phase-pill" id="sh-phase"></div>
+    </div>
+    <button class="sheet-close" onclick="closeSheet()">✕</button>
+  </div>
+  <div class="sheet-scroll">
+    <div class="sheet-body" id="sheet-body"></div>
+  </div>
+</div>
+
+<!-- ── TIMER OVERLAY ── -->
+<div class="timer-overlay" id="timer-overlay">
+  <button class="timer-btn-close" onclick="closeTimer()">✕</button>
+  <div class="timer-task-name" id="timer-task-name"></div>
+  <div class="timer-ring-wrap" id="timer-ring-wrap">
+    <svg class="timer-ring-svg" viewBox="0 0 220 220">
+      <circle class="t-ring-bg" cx="110" cy="110" r="98"/>
+      <circle class="t-ring-fill" id="t-ring" cx="110" cy="110" r="98"
+        stroke-dasharray="615.75" stroke-dashoffset="0"/>
+    </svg>
+    <div class="timer-text-wrap">
+      <div class="timer-digits" id="timer-digits">00:00</div>
+      <div class="timer-status" id="timer-status">READY</div>
+    </div>
+  </div>
+  <div class="timer-controls">
+    <button class="timer-btn timer-btn-sm" onclick="resetTimer()" title="Reset">↺</button>
+    <button class="timer-btn timer-btn-main" id="timer-play-btn" onclick="toggleTimer()">▶</button>
+    <button class="timer-btn timer-btn-sm" onclick="addMinute()" title="+1 min">+1</button>
+  </div>
+</div>
+
+<!-- ── INSTALL BANNER ── -->
+<div class="install-banner" id="install-banner" style="display:none">
+  <div class="install-banner-text">
+    <div class="install-banner-title">Add to Home Screen</div>
+    <div class="install-banner-sub">Install for a full native app experience</div>
+  </div>
+  <button class="install-banner-btn" id="install-banner-btn">Install</button>
+  <button class="install-banner-close" onclick="document.getElementById('install-banner').style.display='none'">✕</button>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════════
+const RANGE_START = new Date(2026,4,2);
+const RANGE_END   = new Date(2026,8,5);
+const TODAY_DS    = '2026-05-02';
+
+const MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+const EXAMS = ['2026-05-11','2026-05-12','2026-05-15','2026-05-18','2026-05-19','2026-05-22'];
+
+const PC = ['#e05555','#d4a843','#60a5fa','#4ade80'];
+const PB = ['#e0554514','#d4a84314','#60a5fa14','#4ade8014'];
+const PN = ['Pre-Exam Prep','Phase 1 · Alphabet','Phase 2 · Grammar','Phase 3 · Immersion'];
+const PE = [new Date(2026,4,2),new Date(2026,4,23),new Date(2026,5,16),new Date(2026,7,1),new Date(2026,8,6)];
+
+const VOCAB = [
+  [{r:'Привет',e:'Hi'},{r:'Пока',e:'Bye'},{r:'Да',e:'Yes'},{r:'Нет',e:'No'},{r:'Спасибо',e:'Thank you'}],
+  [{r:'Пожалуйста',e:'Please / You\'re welcome'},{r:'Хорошо',e:'Good / OK'},{r:'Плохо',e:'Bad'},{r:'Я',e:'I'},{r:'Ты',e:'You'}],
+  [{r:'Он / Она',e:'He / She'},{r:'Мы',e:'We'},{r:'Они',e:'They'},{r:'Есть',e:'There is'},{r:'Дом',e:'House'}],
+  [{r:'Вода',e:'Water'},{r:'Еда',e:'Food'},{r:'Время',e:'Time'},{r:'День',e:'Day'},{r:'Ночь',e:'Night'}],
+  [{r:'Иду',e:'I go (walking)'},{r:'Еду',e:'I go (vehicle)'},{r:'Говорю',e:'I speak'},{r:'Понимаю',e:'I understand'},{r:'Знаю',e:'I know'}],
+  [{r:'Хочу',e:'I want'},{r:'Могу',e:'I can'},{r:'Люблю',e:'I love'},{r:'Думаю',e:'I think'},{r:'Вижу',e:'I see'}],
+  [{r:'Большой',e:'Big'},{r:'Маленький',e:'Small'},{r:'Красивый',e:'Beautiful'},{r:'Новый',e:'New'},{r:'Старый',e:'Old'}],
+  [{r:'Сегодня',e:'Today'},{r:'Завтра',e:'Tomorrow'},{r:'Вчера',e:'Yesterday'},{r:'Сейчас',e:'Now'},{r:'Потом',e:'Later'}],
+  [{r:'Магазин',e:'Shop'},{r:'Улица',e:'Street'},{r:'Город',e:'City'},{r:'Страна',e:'Country'},{r:'Работа',e:'Work'}],
+  [{r:'Семья',e:'Family'},{r:'Мама',e:'Mum'},{r:'Папа',e:'Dad'},{r:'Друг',e:'Friend (m)'},{r:'Подруга',e:'Friend (f)'}],
+  [{r:'Читаю',e:'I read'},{r:'Пишу',e:'I write'},{r:'Слушаю',e:'I listen'},{r:'Смотрю',e:'I watch'},{r:'Учусь',e:'I study'}],
+  [{r:'Нравится',e:'I like'},{r:'Интересно',e:'Interesting'},{r:'Скучно',e:'Boring'},{r:'Важно',e:'Important'},{r:'Трудно',e:'Difficult'}],
+  [{r:'Помогать',e:'To help'},{r:'Встречать',e:'To meet'},{r:'Ждать',e:'To wait'},{r:'Спрашивать',e:'To ask'},{r:'Отвечать',e:'To answer'}],
+  [{r:'Утро',e:'Morning'},{r:'Вечер',e:'Evening'},{r:'Неделя',e:'Week'},{r:'Месяц',e:'Month'},{r:'Год',e:'Year'}],
+  [{r:'Много',e:'A lot'},{r:'Мало',e:'A little'},{r:'Очень',e:'Very'},{r:'Совсем',e:'Completely'},{r:'Почти',e:'Almost'}],
+];
+
+const GRAMMAR = [
+  {t:'Noun Gender',d:'Words ending in a consonant = masculine. Ending -а/-я = feminine. Ending -о/-е = neuter. Find 10 nouns, assign gender, add to Anki with gender marked.'},
+  {t:'Nominative Case',d:'The nominative is the subject — who does the action. Practise "Это ___" (This is ___) with 10 different nouns. Write each sentence out.'},
+  {t:'Accusative Case',d:'The accusative marks the direct object. "Я вижу ___" (I see ___). For animate masculine nouns the ending changes. Write 10 examples.'},
+  {t:'Present Tense: -ать',d:'Learn the pattern: я говорю, ты говоришь, он говорит, мы говорим, вы говорите, они говорят. Conjugate: читать, слушать, знать — all 6 forms each.'},
+  {t:'To Be (быть)',d:'In Russian present tense, "to be" is dropped. "Я студент" = I am a student. Learn full forms: буду, был, была, были. Write 6 sentences using different forms.'},
+  {t:'Genitive Case',d:'"Нет ___" (There is no ___) always takes genitive. Masc add -а, fem change to -ы/-и. Write 8 "there is no ___" sentences — things around your house.'},
+  {t:'Numbers & Time',d:'Practise 1–100. Learn "Который час?" (What time is it?) and "Сейчас ___ часов". Quiz yourself — set your phone alarm and tell Jenny the time in Russian.'},
+  {t:'Question Words',d:'кто, что, где, куда, откуда, когда, почему, как, сколько. Write one real question using each — questions you\'d actually want to ask Jenny.'},
+  {t:'Adjective Agreement',d:'Adjectives match noun gender. Endings: -ый (m), -ая (f), -ое (n). Practise: новый/новая/новое, красивый/красивая/красивое — write 8 noun+adjective pairs.'},
+  {t:'Dative Case',d:'Dative = to/for. "Я дам ___" (I\'ll give to ___). Also for age: "Мне 17 лет". Write 8 dative sentences — gifts you\'d give people you know.'},
+];
+
+function getPhase(d) {
+  const ds = toDS(d);
+  if (ds < '2026-05-23') return 0;
+  if (ds < '2026-06-16') return 1;
+  if (ds < '2026-08-01') return 2;
+  return 3;
+}
+
+function getDayData(d) {
+  const ph = getPhase(d);
+  const dow = d.getDay();
+  const isWE = dow===0||dow===6;
+  const ds = toDS(d);
+  const isExam = EXAMS.includes(ds);
+
+  if (ph===0) {
+    if (isExam) return {note:'📝 Exam day — rest. No Russian today. Good luck!', tasks:[], vocab:null};
+    return {note:'Exams first. Just 10 minutes today — no pressure at all.', vocab:null, tasks:[
+      {name:'Duolingo Alphabet Intro',desc:'Open Duolingo Russian, complete 1 Cyrillic lesson. Just getting your eye in.',dur:'10 min',secs:600}
+    ]};
+  }
+  if (ph===1) {
+    const wn = Math.floor((d-new Date(2026,4,23))/(7*86400000));
+    const vocab = VOCAB[Math.min(wn,3)];
+    const di = Math.floor((d-new Date(2026,4,23))/86400000)%7;
+    if (isWE) return {note:'Weekend — review and practise with Jenny.', vocab, tasks:[
+      {name:'Anki Review',desc:'Clear all due cards. No new words — just cement what you know.',dur:'15 min',secs:900},
+      {name:'Handwriting Drill',desc:'Write the full Cyrillic alphabet twice from memory. Go slow, form each letter properly.',dur:'10 min',secs:600},
+      {name:'Jenny Listening Task',desc:'Ask Jenny to say 5 Russian words. Write what you hear in Cyrillic — without the glasses. Don\'t worry about meaning.',dur:'10 min',secs:600},
+    ]};
+    const blocks = [
+      {name:'Cyrillic Block A',desc:'Learn А Б В Г Д Е Ё Ж З И. Write each 5 times. Say each aloud. Use forvo.com to check pronunciation.',dur:'20 min',secs:1200},
+      {name:'Cyrillic Block B',desc:'Learn Й К Л М Н О П Р С Т. Write each 5 times. Spot the ones that look like English letters — those are your quick wins.',dur:'20 min',secs:1200},
+      {name:'Cyrillic Block C',desc:'Learn У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я. The tricky ones. Write each slowly, say it 3 times out loud.',dur:'20 min',secs:1200},
+      {name:'Full Alphabet Test',desc:'Write the entire Cyrillic alphabet from memory without looking. Check yourself. Repeat any you missed 10 times.',dur:'20 min',secs:1200},
+      {name:'Reading Aloud',desc:'Pause on Russian subtitles in an Easy Russian YouTube video. Read each word aloud letter by letter — speed doesn\'t matter yet.',dur:'15 min',secs:900},
+    ];
+    return {note:'Phase 1 — Alphabet foundations. 35–40 min total today.', vocab, tasks:[
+      blocks[di%blocks.length],
+      {name:'LanguageTransfer Audio',desc:'One Thinking in Russian lesson (free at languagetransfer.org). Pause and say every answer aloud before it\'s given.',dur:'15 min',secs:900},
+      {name:'Anki Vocab',desc:'Add this week\'s 5 new words to Anki. Do your daily review — clear all due cards.',dur:'10 min',secs:600},
+    ]};
+  }
+  if (ph===2) {
+    const wn = Math.floor((d-new Date(2026,5,16))/(7*86400000));
+    const vocab = VOCAB[Math.min(wn+4,VOCAB.length-1)];
+    const g = GRAMMAR[wn%GRAMMAR.length];
+    if (isWE) return {note:'Weekend — consolidate this week\'s grammar.',vocab, tasks:[
+      {name:'Anki Full Review',desc:'Clear all due cards. 50+? Split into two sessions with a break.',dur:'20 min',secs:1200},
+      {name:'Easy Russian YouTube',desc:'Watch one Easy Russian video — first with both subtitles, then Russian subtitles only. Note 3 new words.',dur:'20 min',secs:1200},
+      {name:'Russian Chat with Jenny',desc:'10 minutes only in Russian. You can ask "Как это по-русски?" Mistakes are the whole point.',dur:'15 min',secs:900},
+      {name:'Week Summary',desc:'Write a few sentences in your notebook: what grammar did you cover, what clicked, what confused you.',dur:'10 min',secs:600},
+    ]};
+    return {note:'Phase 2 — Core Grammar. 45–55 min today.', vocab, tasks:[
+      {name:g.t,desc:g.d,dur:'20 min',secs:1200},
+      {name:'LanguageTransfer Audio',desc:'Continue Thinking in Russian. Deeper grammar lessons now — pause, speak every prompt, don\'t rush.',dur:'15 min',secs:900},
+      {name:'Anki Review',desc:'Daily review + add new grammar rules as cards. E.g. "Genitive of masc noun → add -а".',dur:'10 min',secs:600},
+      {name:'Write 3 Sentences',desc:'Write 3 sentences using today\'s grammar focus. Keep simple. Show Jenny for a check.',dur:'10 min',secs:600},
+    ]};
+  }
+  // Phase 3
+  const wn = Math.floor((d-new Date(2026,7,1))/(7*86400000));
+  const vocab = VOCAB[Math.min(wn+8,VOCAB.length-1)];
+  if (isWE) return {note:'Immersion weekend — maximum Russian input.',vocab,tasks:[
+    {name:'Russian TV',desc:'25–30 min of Смешарики or Кухня on YouTube — Russian subtitles only. Pause and work out what you missed.',dur:'30 min',secs:1800},
+    {name:'Russian Journal',desc:'5–10 sentences in Russian about your week. Use a dictionary for gaps. Keep all entries — you\'ll love reading them later.',dur:'20 min',secs:1200},
+    {name:'Full Russian Hour with Jenny',desc:'One hour, only Russian. You\'re allowed "Как это по-русски?" and nothing else in English. Laugh about it.',dur:'60 min',secs:3600},
+  ]};
+  return {note:'Phase 3 — Immersion push. 50–60 min today.', vocab, tasks:[
+    {name:'Russian Input',desc:'Russianpod101 podcast or Easy Russian YouTube. Let the sounds wash over you — catch the words you know.',dur:'20 min',secs:1200},
+    {name:'Anki Full Review',desc:'200+ cards now. Clear them all. If a word keeps failing, add a funny memory hook or image to the card.',dur:'15 min',secs:900},
+    {name:'Russian Keyboard',desc:'Phone in Russian. Type today\'s task list or send Jenny a message entirely in Russian. Autocorrect teaches spellings.',dur:'10 min',secs:600},
+    {name:'No-Glasses Conversation',desc:'Talk to Jenny for 5+ minutes without translation. Struggle is the point — your brain is retrieving, not just receiving.',dur:'10 min',secs:600},
+  ]};
+}
+
+// ════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════
+function toDS(d) {
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function dsToDate(ds) { const [y,m,d]=ds.split('-').map(Number); return new Date(y,m-1,d); }
+function inRange(d) { return d>=RANGE_START && d<=RANGE_END; }
+
+function load(k,def) { try{ return JSON.parse(localStorage.getItem(k))??def; }catch(e){ return def; } }
+function save(k,v)   { try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+// ════════════════════════════════════════════════════════
+// SOUND ENGINE (Web Audio API — no files needed)
+// ════════════════════════════════════════════════════════
+let AC = null;
+function getAC() { if(!AC) AC = new (window.AudioContext||window.webkitAudioContext)(); return AC; }
+
+function playTone(freq, type='sine', dur=0.08, vol=0.15, delay=0) {
+  try {
+    const ac = getAC();
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = type;
+    o.frequency.setValueAtTime(freq, ac.currentTime+delay);
+    g.gain.setValueAtTime(0, ac.currentTime+delay);
+    g.gain.linearRampToValueAtTime(vol, ac.currentTime+delay+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+delay+dur);
+    o.start(ac.currentTime+delay);
+    o.stop(ac.currentTime+delay+dur+0.05);
+  } catch(e){}
+}
+
+function soundTap()      { playTone(480,'sine',0.06,0.12); }
+function soundCheck()    { playTone(523,'sine',0.12,0.18); setTimeout(()=>playTone(784,'sine',0.18,0.14),80); }
+function soundUncheck()  { playTone(392,'sine',0.08,0.1); }
+function soundOpen()     { playTone(440,'sine',0.1,0.1); playTone(550,'sine',0.12,0.08,0.06); }
+function soundClose()    { playTone(350,'sine',0.1,0.08); }
+function soundAddEvent() { playTone(600,'sine',0.08,0.12); playTone(800,'sine',0.1,0.1,0.07); }
+function soundComplete()  {
+  [523,659,784,1047].forEach((f,i) => playTone(f,'sine',0.2,0.15,i*0.1));
+}
+function soundTimerDone() {
+  [523,659,784,659,784,1047].forEach((f,i) => playTone(f,'triangle',0.25,0.2,i*0.12));
+}
+function soundTimerTick() { playTone(660,'square',0.02,0.04); }
+
+// ════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════
+let currentMonth = { y:2026, m:4 }; // May 2026
+let activeView = 'cal';
+let selectedDS = null;
+let completed = new Set(load('ru2_done',[]));
+let events = load('ru2_events',{});
+
+function saveCompleted() { save('ru2_done',[...completed]); }
+function saveEvents()    { save('ru2_events',events); }
+
+// ════════════════════════════════════════════════════════
+// CALENDAR
+// ════════════════════════════════════════════════════════
+const MONTHS_AVAIL = [
+  {y:2026,m:4},{y:2026,m:5},{y:2026,m:6},{y:2026,m:7},{y:2026,m:8}
+];
+
+function changeMonth(dir) {
+  soundTap();
+  const idx = MONTHS_AVAIL.findIndex(x=>x.y===currentMonth.y&&x.m===currentMonth.m);
+  const ni = Math.max(0,Math.min(MONTHS_AVAIL.length-1,idx+dir));
+  currentMonth = MONTHS_AVAIL[ni];
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const {y,m} = currentMonth;
+  document.getElementById('cal-label').innerHTML = MN[m]+' <span>'+y+'</span>';
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const first = new Date(y,m,1);
+  const startDow = (first.getDay()+6)%7; // Mon=0
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const totalCells = 42;
+
+  for(let i=0;i<totalCells;i++){
+    const day = i - startDow + 1;
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+
+    if(day<1||day>daysInMonth){
+      cell.classList.add('out-range');
+      const d2 = day<1 ? new Date(y,m,day) : new Date(y,m,day);
+      cell.innerHTML = `<span class="day-num" style="color:var(--t3)">${day<1?new Date(y,m,day).getDate():day>daysInMonth?day-daysInMonth:day}</span>`;
+    } else {
+      const d = new Date(y,m,day);
+      const ds = toDS(d);
+      const ir = inRange(d);
+      const ph = ir ? getPhase(d) : -1;
+      const isToday = ds===TODAY_DS;
+      const isDone = completed.has(ds);
+      const isExam = EXAMS.includes(ds);
+      const hasEvent = (events[ds]||[]).length>0;
+
+      if(ir && ph>=0) cell.classList.add('ph'+ph);
+      else if(!ir) cell.classList.add('out-range');
+      if(isToday) cell.classList.add('today');
+      if(isDone) cell.classList.add('done');
+      if(isExam) cell.classList.add('exam-day');
+      if(ds===selectedDS) cell.classList.add('selected');
+
+      const dots = [];
+      if(ir && ph>=0) dots.push(`<div class="day-dot" style="background:${PC[ph]}88"></div>`);
+      if(hasEvent)    dots.push(`<div class="day-dot" style="background:#a78bfa"></div>`);
+
+      cell.innerHTML =
+        `<span class="day-num">${day}</span>`+
+        (dots.length ? `<div class="day-dots">${dots.join('')}</div>` : '');
+
+      if(ir) {
+        cell.addEventListener('click',()=>{
+          soundTap();
+          selectedDS=ds;
+          renderCalendar();
+          openSheet(ds);
+        });
+      }
+    }
+    grid.appendChild(cell);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// SHEET
+// ════════════════════════════════════════════════════════
+function openSheet(ds) {
+  soundOpen();
+  const d = dsToDate(ds);
+  const ph = getPhase(d);
+  const {note,tasks,vocab} = getDayData(d);
+  const isDone = completed.has(ds);
+  const isExam = EXAMS.includes(ds);
+
+  document.getElementById('sh-num').textContent = DN[d.getDay()]+' '+d.getDate();
+  document.getElementById('sh-sub').textContent = MN[d.getMonth()]+' '+d.getFullYear();
+  const pp = document.getElementById('sh-phase');
+  pp.textContent = PN[ph];
+  pp.style.background = PB[ph];
+  pp.style.color = PC[ph];
+
+  const taskDone = new Set(load('ru2_tasks_'+ds,[]));
+  let html = '';
+
+  if(isExam) html += `<div class="exam-banner">📝 Exam Day — No study today. Good luck!</div>`;
+  if(note && !isExam) html += `<div class="day-note">${note}</div>`;
+
+  // Events
+  const evts = events[ds]||[];
+  html += `<div class="sec-label">Your Events</div>`;
+  evts.forEach((ev,i)=>{
+    html+=`<div class="event-item">
+      <div class="event-bullet"></div>
+      <div class="event-text">${ev}</div>
+      <button class="event-del" onclick="deleteEvent('${ds}',${i})">✕</button>
+    </div>`;
+  });
+  html += `<div class="add-event-row">
+    <input class="add-event-input" id="ei-${ds}" placeholder="Add an event or note…" maxlength="100">
+    <button class="add-event-btn" onclick="addEvent('${ds}')">+</button>
+  </div>`;
+
+  // Vocab
+  if(vocab){
+    html+=`<div class="sec-label">This Week's Words</div>
+    <div class="vocab-grid">${vocab.map(v=>`
+      <div class="vocab-card">
+        <div class="vocab-ru">${v.r}</div>
+        <div class="vocab-en">${v.e}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // Tasks
+  if(tasks.length){
+    html+=`<div class="sec-label">Study Tasks</div>`;
+    tasks.forEach((t,i)=>{
+      const done = taskDone.has(String(i));
+      html+=`<div class="task-card ${done?'done':''}" id="tc-${i}" onclick="toggleTask('${ds}',${i})">
+        <div class="task-top">
+          <div class="task-check">${done?'✓':''}</div>
+          <div class="task-info">
+            <div class="task-name">${t.name}</div>
+            <div class="task-desc">${t.desc}</div>
+          </div>
+        </div>
+        ${t.dur?`<div class="task-footer">
+          <div class="task-dur">⏱ ${t.dur}</div>
+          <button class="timer-launch" onclick="event.stopPropagation();openTimer('${t.name}',${t.secs})">▶ Start Timer</button>
+        </div>`:''}
+      </div>`;
+    });
+    html+=`<button class="mark-btn ${isDone?'done':''}" id="mark-btn" onclick="toggleDone('${ds}')">
+      ${isDone?'✓ Day Complete':'Mark Day as Complete'}
+    </button>`;
+  }
+
+  document.getElementById('sheet-body').innerHTML = html;
+
+  // Enter key for event input
+  requestAnimationFrame(()=>{
+    const inp = document.getElementById('ei-'+ds);
+    if(inp) inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ addEvent(ds); }});
+  });
+
+  document.getElementById('backdrop').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+}
+
+function closeSheet() {
+  soundClose();
+  document.getElementById('backdrop').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+  selectedDS = null;
+  renderCalendar();
+}
+
+// Sheet swipe to dismiss
+let sheetTouchY = 0;
+const sheetEl = document.getElementById('sheet');
+sheetEl.addEventListener('touchstart', e=>{ sheetTouchY = e.touches[0].clientY; },{passive:true});
+sheetEl.addEventListener('touchend', e=>{
+  if(e.changedTouches[0].clientY - sheetTouchY > 90) closeSheet();
+},{passive:true});
+
+function toggleTask(ds, idx) {
+  const k = 'ru2_tasks_'+ds;
+  const done = new Set(load(k,[]));
+  if(done.has(String(idx))){ done.delete(String(idx)); soundUncheck(); }
+  else { done.add(String(idx)); soundCheck(); }
+  save(k,[...done]);
+  // Re-render just the card
+  const card = document.getElementById('tc-'+idx);
+  if(card){
+    const isDone = done.has(String(idx));
+    card.classList.toggle('done',isDone);
+    card.querySelector('.task-check').textContent = isDone?'✓':'';
+  }
+  // Update mark btn
+  const {tasks} = getDayData(dsToDate(ds));
+  const allDone = tasks.every((_,i)=>done.has(String(i)));
+}
+
+function toggleDone(ds) {
+  if(completed.has(ds)){ completed.delete(ds); soundUncheck(); }
+  else { completed.add(ds); soundComplete(); }
+  saveCompleted();
+  renderCalendar();
+  updateTodayView();
+  updateProgress();
+  const btn = document.getElementById('mark-btn');
+  if(btn){
+    const isDone = completed.has(ds);
+    btn.className = 'mark-btn'+(isDone?' done':'');
+    btn.textContent = isDone?'✓ Day Complete':'Mark Day as Complete';
+  }
+}
+
+function addEvent(ds) {
+  const inp = document.getElementById('ei-'+ds);
+  const val = inp?.value?.trim();
+  if(!val) return;
+  soundAddEvent();
+  if(!events[ds]) events[ds]=[];
+  events[ds].push(val);
+  saveEvents();
+  renderCalendar();
+  openSheet(ds);
+}
+
+function deleteEvent(ds,idx) {
+  soundUncheck();
+  events[ds]?.splice(idx,1);
+  saveEvents();
+  renderCalendar();
+  openSheet(ds);
+}
+
+// ════════════════════════════════════════════════════════
+// TODAY VIEW
+// ════════════════════════════════════════════════════════
+function updateTodayView() {
+  const ds = TODAY_DS;
+  const d = dsToDate(ds);
+  const ph = getPhase(d);
+  const {note,tasks,vocab} = getDayData(d);
+  const taskDone = new Set(load('ru2_tasks_'+ds,[]));
+  const isDone = completed.has(ds);
+
+  document.getElementById('td-label').textContent = DN[d.getDay()]+', '+MN[d.getMonth()]+' '+d.getDate();
+  document.getElementById('td-date').textContent = 'Today';
+  const pp = document.getElementById('td-phase');
+  pp.textContent = PN[ph];
+  pp.className = 'today-phase-pill';
+  pp.style.background = PB[ph];
+  pp.style.color = PC[ph];
+
+  let html = '';
+
+  // Progress mini
+  let total=0, done_c=0;
+  let dt = new Date(RANGE_START);
+  while(dt<=RANGE_END){ total++; if(completed.has(toDS(dt))) done_c++; dt.setDate(dt.getDate()+1); }
+  const pct = total>0 ? Math.round((done_c/total)*100) : 0;
+  html += `<div style="padding:0 16px 0"><div class="today-prog-row">
+    <div class="today-prog-info">
+      <div class="today-prog-pct">${pct}%</div>
+      <div class="today-prog-sub">${done_c} of ${total} days complete</div>
+      <div class="today-prog-track"><div class="today-prog-fill" style="width:${pct}%"></div></div>
+    </div>
+  </div></div>`;
+
+  if(note) html+=`<div class="today-note">${note}</div>`;
+
+  if(tasks.length){
+    html+=`<div class="today-sec-label">Today's Tasks</div>`;
+    tasks.forEach((t,i)=>{
+      const done = taskDone.has(String(i));
+      html+=`<div class="today-task-card ${done?'done':''}" onclick="todayToggleTask('${ds}',${i})">
+        <div class="today-task-head">
+          <div class="today-check">${done?'✓':''}</div>
+          <div class="today-task-name">${t.name}</div>
+        </div>
+        <div class="today-task-desc">${t.desc}</div>
+        ${t.secs?`<div style="padding:8px 0 0 30px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--gold);font-weight:600">⏱ ${t.dur}</span>
+          <button class="timer-launch" onclick="event.stopPropagation();openTimer('${t.name}',${t.secs})">▶ Start Timer</button>
+        </div>`:''}
+      </div>`;
+    });
+  }
+
+  document.getElementById('td-body').innerHTML = html;
+}
+
+function todayToggleTask(ds,idx){
+  const k='ru2_tasks_'+ds;
+  const done=new Set(load(k,[]));
+  if(done.has(String(idx))){ done.delete(String(idx)); soundUncheck(); }
+  else{ done.add(String(idx)); soundCheck(); }
+  save(k,[...done]);
+  updateTodayView();
+}
+
+// ════════════════════════════════════════════════════════
+// PROGRESS VIEW
+// ════════════════════════════════════════════════════════
+function updateProgress() {
+  let total=0, done_c=0;
+  let dt = new Date(RANGE_START);
+  while(dt<=RANGE_END){ total++; if(completed.has(toDS(dt))) done_c++; dt.setDate(dt.getDate()+1); }
+  const pct = total>0?Math.round((done_c/total)*100):0;
+
+  // Ring
+  const circ = 427.26;
+  const offset = circ - (circ * pct/100);
+  const ring = document.getElementById('prog-fill-ring');
+  if(ring){ ring.style.strokeDashoffset = offset; }
+  const pt = document.getElementById('prog-pct-text');
+  const dt2 = document.getElementById('prog-days-text');
+  if(pt) pt.textContent = pct+'%';
+  if(dt2) dt2.textContent = done_c+' / '+total+' days';
+
+  // Stats
+  const streak = calcStreak();
+  document.getElementById('prog-stats').innerHTML = `
+    <div class="prog-stat"><div class="prog-stat-val" style="color:var(--green)">${done_c}</div><div class="prog-stat-label">Days Complete</div></div>
+    <div class="prog-stat"><div class="prog-stat-val" style="color:var(--gold)">${streak}</div><div class="prog-stat-label">Day Streak 🔥</div></div>
+    <div class="prog-stat"><div class="prog-stat-val" style="color:var(--blue)">${total-done_c}</div><div class="prog-stat-label">Days Remaining</div></div>
+    <div class="prog-stat"><div class="prog-stat-val" style="color:var(--purple)">${(Object.values(events).flat()).length}</div><div class="prog-stat-label">Events Added</div></div>
+  `;
+
+  // Phase breakdown
+  const phases = PN.map((_,pi)=>{
+    let ptotal=0, pdone=0;
+    let dd=new Date(PE[pi]);
+    while(dd<PE[pi+1]&&dd<=RANGE_END){ ptotal++; if(completed.has(toDS(dd))) pdone++; dd.setDate(dd.getDate()+1); }
+    return {total:ptotal,done:pdone};
+  });
+  document.getElementById('phase-list').innerHTML = phases.map((p,i)=>{
+    const pp = p.total>0?Math.round((p.done/p.total)*100):0;
+    return `<div class="phase-prog-item">
+      <div class="phase-prog-top">
+        <div class="phase-prog-name" style="color:${PC[i]}">${PN[i]}</div>
+        <div class="phase-prog-pct">${p.done}/${p.total}</div>
+      </div>
+      <div class="phase-track">
+        <div class="phase-fill" style="width:${pp}%;background:${PC[i]}"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function calcStreak() {
+  let streak=0;
+  let d=new Date(dsToDate(TODAY_DS));
+  while(true){
+    if(completed.has(toDS(d))) streak++;
+    else break;
+    d.setDate(d.getDate()-1);
+    if(d<RANGE_START) break;
+  }
+  return streak;
+}
+
+// ════════════════════════════════════════════════════════
+// TIMER
+// ════════════════════════════════════════════════════════
+let timerTotal=0, timerLeft=0, timerRunning=false, timerInterval=null;
+
+function openTimer(name, secs) {
+  soundOpen();
+  timerTotal = secs;
+  timerLeft = secs;
+  timerRunning = false;
+  clearInterval(timerInterval);
+  document.getElementById('timer-task-name').textContent = name;
+  document.getElementById('timer-play-btn').textContent = '▶';
+  document.getElementById('timer-status').textContent = 'READY';
+  updateTimerDisplay();
+  document.getElementById('timer-overlay').classList.add('open');
+}
+
+function closeTimer() {
+  soundClose();
+  clearInterval(timerInterval);
+  timerRunning=false;
+  document.getElementById('timer-overlay').classList.remove('open');
+}
+
+function toggleTimer() {
+  if(timerLeft<=0) return;
+  timerRunning = !timerRunning;
+  document.getElementById('timer-play-btn').textContent = timerRunning ? '⏸' : '▶';
+  document.getElementById('timer-status').textContent = timerRunning ? 'FOCUS' : 'PAUSED';
+  soundTap();
+  if(timerRunning){
+    timerInterval = setInterval(()=>{
+      timerLeft--;
+      if(timerLeft<=0){
+        timerLeft=0;
+        timerRunning=false;
+        clearInterval(timerInterval);
+        document.getElementById('timer-play-btn').textContent='✓';
+        document.getElementById('timer-status').textContent='DONE';
+        document.getElementById('timer-ring-wrap').classList.add('done-anim');
+        setTimeout(()=>document.getElementById('timer-ring-wrap').classList.remove('done-anim'),700);
+        soundTimerDone();
+        if(navigator.vibrate) navigator.vibrate([200,100,200]);
+      } else {
+        if(timerLeft<=10) soundTimerTick();
+        if(timerLeft%60===0 && timerLeft<timerTotal) soundTap();
+      }
+      updateTimerDisplay();
+    },1000);
+  } else {
+    clearInterval(timerInterval);
+  }
+}
+
+function resetTimer() {
+  soundUncheck();
+  clearInterval(timerInterval);
+  timerRunning=false;
+  timerLeft=timerTotal;
+  document.getElementById('timer-play-btn').textContent='▶';
+  document.getElementById('timer-status').textContent='READY';
+  updateTimerDisplay();
+}
+
+function addMinute() {
+  soundTap();
+  timerLeft+=60;
+  if(timerLeft>timerTotal) timerTotal=timerLeft;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const m=Math.floor(timerLeft/60), s=timerLeft%60;
+  document.getElementById('timer-digits').textContent =
+    String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  const frac = timerTotal>0 ? timerLeft/timerTotal : 0;
+  const circ = 615.75;
+  const ring = document.getElementById('t-ring');
+  ring.style.strokeDashoffset = circ * (1-frac);
+  ring.className = 't-ring-fill'+(timerLeft<=30&&timerLeft>0?' warning':'');
+}
+
+// ════════════════════════════════════════════════════════
+// VIEW SWITCHER
+// ════════════════════════════════════════════════════════
+function switchView(v) {
+  soundTap();
+  activeView=v;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('nav-'+v).classList.add('active');
+  if(v==='today') updateTodayView();
+  if(v==='progress') updateProgress();
+}
+
+// ════════════════════════════════════════════════════════
+// PWA INSTALL
+// ════════════════════════════════════════════════════════
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  document.getElementById('install-banner').style.display='flex';
+});
+function triggerInstall(){
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(()=>{
+    deferredPrompt=null;
+    document.getElementById('install-banner').style.display='none';
+  });
+}
+document.getElementById('install-banner-btn').addEventListener('click',triggerInstall);
+
+// ════════════════════════════════════════════════════════
+// SERVICE WORKER
+// ════════════════════════════════════════════════════════
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+renderCalendar();
+updateTodayView();
+updateProgress();
+</script>
+</body>
+</html>
