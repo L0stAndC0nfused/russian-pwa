@@ -1041,7 +1041,7 @@ body {
 // ════════════════════════════════════════════════════════
 const RANGE_START = new Date(2026,4,2);
 const RANGE_END   = new Date(2026,8,5);
-const TODAY_DS    = '2026-05-02';
+const TODAY_DS = new Date().toISOString().slice(0, 10);
 
 const MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
